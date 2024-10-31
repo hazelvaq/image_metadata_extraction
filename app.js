@@ -1,24 +1,22 @@
 document.getElementById('fileInput').addEventListener('change', handleFiles);
 
 let metadataArray = [];
-let markers = {}; // Store markers by filename
-let importantKeys = ["Filename", "Date", "Time", "Latitude", "Longitude", "Make", "Model"]; // Main columns for displayed metadata
-let allKeys = new Set(); // Set to track all unique metadata keys across files
+let markers = {};
+let importantKeys = ["Filename", "Date", "Time", "Latitude", "Longitude", "Make", "Model"];
+let allKeys = new Set();
 
-// Initialize Leaflet map
-const map = L.map('map').setView([0, 0], 2); // Center map at a global level initially
+const map = L.map('map').setView([0, 0], 2);
 
-// Add OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 function handleFiles(event) {
     const files = event.target.files;
     metadataArray = [];
-    markers = {}; // Reset markers
-    allKeys.clear(); // Clear allKeys for new files
+    markers = {};
+    allKeys.clear();
 
     const promises = Array.from(files).map((file) => {
         return new Promise((resolve) => {
@@ -35,15 +33,12 @@ function handleFiles(event) {
                             Model: metadata.Model || "N/A"
                         };
 
-                        // Track all metadata keys for optional full download
                         Object.keys(metadata).forEach(key => {
-                            // Only add textual data keys, skipping non-text data
                             if (typeof metadata[key] === 'string' || typeof metadata[key] === 'number') {
                                 allKeys.add(key);
                             }
                         });
 
-                        // Extract and format Date and Time
                         if (metadata.DateTime) {
                             const [date, time] = metadata.DateTime.split(" ");
                             const [year, month, day] = date.split(":");
@@ -54,16 +49,14 @@ function handleFiles(event) {
                             formattedData.Time = "N/A";
                         }
 
-                        // Separate GPS Latitude and Longitude if present
                         const latitude = formatGPS(metadata.GPSLatitude, metadata.GPSLatitudeRef);
                         const longitude = formatGPS(metadata.GPSLongitude, metadata.GPSLongitudeRef);
                         formattedData.Latitude = latitude || "N/A";
                         formattedData.Longitude = longitude || "N/A";
 
-                        // Add marker if valid coordinates exist
                         if (latitude && longitude) {
                             const marker = addMapMarker(latitude, longitude, file.name, img.src);
-                            markers[file.name] = marker; // Store marker by filename
+                            markers[file.name] = marker;
                         }
 
                         metadataArray.push({ ...formattedData, ...metadata });
@@ -82,26 +75,24 @@ function handleFiles(event) {
 
 function displayMetadataTable() {
     const tableBody = document.getElementById('metadataTable').querySelector('tbody');
-    tableBody.innerHTML = ""; // Clear existing table data
-    
+    tableBody.innerHTML = "";
+
     metadataArray.forEach(entry => {
         const row = document.createElement('tr');
-        row.classList.add('table-row'); // Add class for styling
-        row.dataset.filename = entry.Filename; // Add filename for reference
+        row.classList.add('table-row');
+        row.dataset.filename = entry.Filename;
 
-        // Populate each cell
         importantKeys.forEach(key => {
             const cell = document.createElement('td');
             cell.textContent = entry[key] || 'N/A';
             row.appendChild(cell);
         });
 
-        // Add click event listener to each row
         row.addEventListener('click', () => {
             const marker = markers[entry.Filename];
             if (marker) {
-                map.setView(marker.getLatLng(), 12); // Zoom to the marker
-                marker.openPopup(); // Open the popup with image thumbnail
+                map.setView(marker.getLatLng(), 12);
+                marker.openPopup();
             }
         });
 
@@ -123,26 +114,18 @@ function addMapMarker(latitude, longitude, filename, imgSrc) {
     return marker;
 }
 
+// CSV Download
 function downloadCSV() {
-    const allMetadataCheckbox = document.getElementById('allMetadataCheckbox').checked;
-
-    // Create the ordered list of CSV columns
-    const csvKeys = [...importantKeys]; // Start with main columns
-    if (allMetadataCheckbox) {
-        // Append additional keys (sorted alphabetically) while skipping duplicates
-        const additionalKeys = Array.from(allKeys).filter(key => !importantKeys.includes(key)).sort();
-        csvKeys.push(...additionalKeys);
-    }
-
+    const csvKeys = [...importantKeys];
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += csvKeys.map(header => `"${header}"`).join(",") + "\n"; // Quote headers for clarity
+    csvContent += csvKeys.map(header => `"${header}"`).join(",") + "\n";
 
     metadataArray.forEach(entry => {
         const row = csvKeys.map(key => {
             const value = entry[key] || 'N/A';
-            return `"${value}"`; // Quote each value to ensure readability
+            return `"${value}"`;
         });
-        csvContent += row.join(",") + "\n"; // Join rows with commas
+        csvContent += row.join(",") + "\n";
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -152,4 +135,51 @@ function downloadCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// GeoJSON Download
+function downloadGeoJSON() {
+    const geojsonData = {
+        type: "FeatureCollection",
+        features: metadataArray.map(entry => ({
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [entry.Longitude || 0, entry.Latitude || 0]
+            },
+            properties: importantKeys.reduce((acc, key) => {
+                acc[key] = entry[key] || "N/A";
+                return acc;
+            }, {})
+        }))
+    };
+
+    const blob = new Blob([JSON.stringify(geojsonData)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "metadata.geojson";
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+// Shapefile Download
+async function downloadShapefile() {
+    const geojsonData = {
+        type: "FeatureCollection",
+        features: metadataArray.map(entry => ({
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [entry.Longitude || 0, entry.Latitude || 0]
+            },
+            properties: importantKeys.reduce((acc, key) => {
+                acc[key] = entry[key] || "N/A";
+                return acc;
+            }, {})
+        }))
+    };
+
+    const options = { folder: "metadata", types: { point: "metadata_points" } };
+    const shp = await shpwrite.download(geojsonData, options);
 }

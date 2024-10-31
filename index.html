@@ -11,6 +11,41 @@
         #metadataTable {
             margin-bottom: 40px; /* Increased spacing between table and map */
         }
+
+        /* Dropdown button styling */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            padding: 5px 0;
+            z-index: 1;
+        }
+
+        .dropdown-content button {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -18,10 +53,15 @@
     <header>
         <h1>Image Metadata Extractor</h1>
         <div class="header-buttons">
-            <label>
-                <input type="checkbox" id="allMetadataCheckbox"> Download all metadata
-            </label>
-            <button onclick="downloadCSV()">Download Metadata as CSV</button>
+            <!-- Dropdown for download options -->
+            <div class="dropdown">
+                <button>Download Metadata</button>
+                <div class="dropdown-content">
+                    <button onclick="downloadCSV()">Download as CSV</button>
+                    <button onclick="downloadGeoJSON()">Download as GeoJSON</button>
+                    <button onclick="downloadShapefile()">Download as Shapefile</button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -35,8 +75,15 @@
     </table>
 
     <!-- Map Container -->
-    <div id="map" style="height: 400px; margin: 20px;"></div>
+    <div id="map" style="height: 420px; margin: 20px;"></div>
 
+    <!-- Ethical Ads Script in the Body -->
+    <div class="dark raised" data-ea-publisher="openanalysisorg" data-ea-type="text" data-ea-style="fixedfooter"></div>
+    
+    <!-- Main JavaScript files -->
     <script src="app.js"></script>
+    <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+    <!-- Shapefile writer library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shp-write/2.0.1/shpwrite.min.js"></script>
 </body>
 </html>

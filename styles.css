@@ -101,3 +101,22 @@ header h1 {
 .close:hover {
     color: #000;
 }
+
+/* Map style */
+
+#map {
+    width: 98%;
+    height: 400px; /* Keeps the height fixed */
+    margin: 20px auto; /* Centers the map */
+}
+
+
+footer {
+    text-align: center;
+    padding: 10px;
+    margin-top: 20px;
+}
+
+footer img {
+    cursor: pointer;
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Metadata Extractor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> <!-- Leaflet CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- Leaflet JS -->
+    <style>
+        #metadataTable {
+            margin-bottom: 40px; /* Increased spacing between table and map */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <h1>Image Metadata Extractor</h1>
+        <div class="header-buttons">
+            <label>
+                <input type="checkbox" id="allMetadataCheckbox"> Download all metadata
+            </label>
+            <button onclick="downloadCSV()">Download Metadata as CSV</button>
+        </div>
+    </header>
+
+    <!-- File Upload and Table Display -->
+    <input type="file" id="fileInput" multiple accept="image/*" style="margin: 20px;">
+    <table id="metadataTable">
+        <thead>
+            <tr><th>Filename</th><th>Date</th><th>Time</th><th>Latitude</th><th>Longitude</th><th>Make</th><th>Model</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Map Container -->
+    <div id="map" style="height: 400px; margin: 20px;"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

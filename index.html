@@ -3,87 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <title>Image Metadata Extractor</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> <!-- Leaflet CSS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- Leaflet JS -->
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <!-- Ethical Ads Script in the Head -->
+    <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+    <!-- Custom Styles -->
     <style>
+        /* Map Styling */
+        #map {
+            height: 420px;
+            margin: 20px 0;
+        }
+
+        /* Table Styling */
         #metadataTable {
-            margin-bottom: 40px; /* Increased spacing between table and map */
+            margin-top: 20px;
         }
 
-        /* Dropdown button styling */
-        .dropdown {
-            position: relative;
-            display: inline-block;
+        /* File Input */
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            padding: 5px 0;
-            z-index: 1;
-        }
 
-        .dropdown-content button {
-            color: black;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            text-align: left;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .dropdown-content button:hover {
-            background-color: #f1f1f1;
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
     </style>
 </head>
 <body>
+    <!-- Ethical Ads Script in the Body -->
+    <div class="dark raised" data-ea-publisher="openanalysisorg" data-ea-type="text" data-ea-style="fixedfooter"></div>
+
     <!-- Header Section -->
-    <header>
-        <h1>Image Metadata Extractor</h1>
-        <div class="header-buttons">
-            <!-- Dropdown for download options -->
-            <div class="dropdown">
-                <button>Download Metadata</button>
-                <div class="dropdown-content">
-                    <button onclick="downloadCSV()">Download as CSV</button>
-                    <button onclick="downloadGeoJSON()">Download as GeoJSON</button>
-                    <button onclick="downloadShapefile()">Download as Shapefile</button>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Image Metadata Extractor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarButtons" aria-controls="navbarButtons" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarButtons">
+                <div class="ms-auto navbar-nav">
+                    <button id="instructionsButton" class="btn btn-outline-light me-2 mb-2 mb-lg-0" data-bs-toggle="modal" data-bs-target="#instructionsModal">Instructions</button>
+                    <div class="dropdown me-2 mb-2 mb-lg-0">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="downloadDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Download Metadata
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="downloadDropdown">
+                            <li><button class="dropdown-item" onclick="downloadCSV()">Download as CSV</button></li>
+                            <li><button class="dropdown-item" onclick="downloadGeoJSON()">Download as GeoJSON</button></li>
+                            <li><button class="dropdown-item" onclick="downloadShapefile()">Download as Shapefile</button></li>
+                        </ul>
+                    </div>
+                    <button id="reportIssueBtn" class="btn btn-outline-light mb-2 mb-lg-0">Report Issues</button>
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- File Upload and Table Display -->
-    <input type="file" id="fileInput" multiple accept="image/*" style="margin: 20px;">
-    <table id="metadataTable">
-        <thead>
-            <tr><th>Filename</th><th>Date</th><th>Time</th><th>Latitude</th><th>Longitude</th><th>Make</th><th>Model</th></tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- File Input -->
+        <div class="row my-4">
+            <div class="col-12">
+                <div class="file-input-group">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="fileInput" multiple accept="image/*">
+                </div>
+            </div>
+        </div>
 
-    <!-- Map Container -->
-    <div id="map" style="height: 420px; margin: 20px;"></div>
+        <!-- Metadata Table -->
+        <div class="row">
+            <div class="col-12">
+                <table id="metadataTable" class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Make</th>
+                            <th>Model</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
 
-    <!-- Ethical Ads Script in the Body -->
-    <div class="dark raised" data-ea-publisher="openanalysisorg" data-ea-type="text" data-ea-style="fixedfooter"></div>
-    
-    <!-- Main JavaScript files -->
-    <script src="app.js"></script>
-    <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+        <!-- Map Container -->
+        <div class="row">
+            <div class="col-12">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div class="modal fade" id="instructionsModal" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">How to Use the Image Metadata Extractor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ol>
+                        <li>Click on the <strong>"Upload File"</strong> button to select one or more images.</li>
+                        <li>The app will extract metadata from the images and display it in the table below.</li>
+                        <li>If the images contain GPS data, their locations will be plotted on the map.</li>
+                        <li>You can click on a table row to zoom to the corresponding location on the map.</li>
+                        <li>Use the <strong>"Download Metadata"</strong> dropdown to export the metadata in different formats.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include necessary scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- EXIF JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
     <!-- Shapefile writer library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shp-write/2.0.1/shpwrite.min.js"></script>
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JavaScript file -->
+    <script src="app.js"></script>
 </body>
 </html>

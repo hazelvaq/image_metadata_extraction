@@ -14,10 +14,25 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 function handleFiles(event) {
     const files = event.target.files;
+
+    // Clear existing data
     metadataArray = [];
-    markers = {};
     allKeys.clear();
 
+    // Remove existing markers from the map
+    for (let key in markers) {
+        map.removeLayer(markers[key]);
+    }
+    markers = {};
+
+    // Clear the table
+    const tableBody = document.getElementById('metadataTable').querySelector('tbody');
+    tableBody.innerHTML = '';
+
+    // Reset the map view
+    map.setView([0, 0], 2);
+
+    // Proceed with processing the new files
     const promises = Array.from(files).map((file) => {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -56,7 +71,7 @@ function handleFiles(event) {
 
                         if (latitude && longitude) {
                             const marker = addMapMarker(latitude, longitude, file.name, img.src);
-                            markers[file.name] = marker;
+                            markers[file.name] = marker; // Store the marker
                         }
 
                         metadataArray.push({ ...formattedData, ...metadata });
@@ -111,11 +126,16 @@ function addMapMarker(latitude, longitude, filename, imgSrc) {
     const marker = L.marker([latitude, longitude]).addTo(map);
     const popupContent = `<b>${filename}</b><br><img src="${imgSrc}" alt="${filename}" style="width: 100px; height: auto;"><br>Lat: ${latitude}, Lon: ${longitude}`;
     marker.bindPopup(popupContent);
+    markers[filename] = marker; // Store the marker
     return marker;
 }
 
 // CSV Download
 function downloadCSV() {
+    if (metadataArray.length === 0) {
+        alert('No metadata available to download.');
+        return;
+    }
     const csvKeys = [...importantKeys];
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += csvKeys.map(header => `"${header}"`).join(",") + "\n";
@@ -139,13 +159,17 @@ function downloadCSV() {
 
 // GeoJSON Download
 function downloadGeoJSON() {
+    if (metadataArray.length === 0) {
+        alert('No metadata available to download.');
+        return;
+    }
     const geojsonData = {
         type: "FeatureCollection",
         features: metadataArray.map(entry => ({
             type: "Feature",
             geometry: {
                 type: "Point",
-                coordinates: [entry.Longitude || 0, entry.Latitude || 0]
+                coordinates: [parseFloat(entry.Longitude) || 0, parseFloat(entry.Latitude) || 0]
             },
             properties: importantKeys.reduce((acc, key) => {
                 acc[key] = entry[key] || "N/A";
@@ -164,14 +188,18 @@ function downloadGeoJSON() {
 }
 
 // Shapefile Download
-async function downloadShapefile() {
+function downloadShapefile() {
+    if (metadataArray.length === 0) {
+        alert('No metadata available to download.');
+        return;
+    }
     const geojsonData = {
         type: "FeatureCollection",
         features: metadataArray.map(entry => ({
             type: "Feature",
             geometry: {
                 type: "Point",
-                coordinates: [entry.Longitude || 0, entry.Latitude || 0]
+                coordinates: [parseFloat(entry.Longitude) || 0, parseFloat(entry.Latitude) || 0]
             },
             properties: importantKeys.reduce((acc, key) => {
                 acc[key] = entry[key] || "N/A";
@@ -181,5 +209,11 @@ async function downloadShapefile() {
     };
 
     const options = { folder: "metadata", types: { point: "metadata_points" } };
-    const shp = await shpwrite.download(geojsonData, options);
+    shpwrite.download(geojsonData, options);
 }
+
+// Handle issue submission
+// Report Issue Button Functionality
+document.getElementById('reportIssueBtn').addEventListener('click', function() {
+    window.open('https://github.com/Moore-Institute-4-Plastic-Pollution-Res/image_metadata_extraction/issues', '_blank');
+  });

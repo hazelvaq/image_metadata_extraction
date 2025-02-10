@@ -85,6 +85,8 @@ function handleFiles(event) {
 
     Promise.all(promises).then(() => {
         displayMetadataTable();
+        plotTimeTrend(); // Create/update the time trend chart.
+        zoomToMarkers(); // Zoom the map to include all markers.
     });
 }
 
@@ -217,3 +219,124 @@ function downloadShapefile() {
 document.getElementById('reportIssueBtn').addEventListener('click', function() {
     window.open('https://github.com/Moore-Institute-4-Plastic-Pollution-Res/image_metadata_extraction/issues', '_blank');
   });
+
+
+// Global variable for the time trend chart
+let timeTrendChart = null;
+
+function plotTimeTrend() {
+    // If a chart already exists, destroy it so we can recreate it.
+    if (timeTrendChart) {
+        timeTrendChart.destroy();
+    }
+
+    // Filter metadata entries that have valid Date and Time values.
+    const validData = metadataArray.filter(entry => entry.Date !== "N/A" && entry.Time !== "N/A");
+
+    // Convert the Date and Time strings into Date objects.
+    // Note: The Date is formatted as "MM-DD-YYYY" so we split and create a new Date.
+    const timestamps = validData.map(entry => {
+        const dateParts = entry.Date.split('-'); // [month, day, year]
+        const timeParts = entry.Time.split(':'); // [hour, minute, second]
+        if (dateParts.length === 3 && timeParts.length >= 2) {
+            // Use 0 for seconds if not provided.
+            const [month, day, year] = dateParts;
+            const [hour, minute, second = "0"] = timeParts;
+            return new Date(year, month - 1, day, hour, minute, second);
+        }
+        return null;
+    }).filter(dateObj => dateObj !== null);
+
+    // If no valid timestamps were found, do not create the chart.
+    if (timestamps.length === 0) {
+        return;
+    }
+
+    // Sort the timestamps in ascending order.
+    timestamps.sort((a, b) => a - b);
+
+    // Create data points for a cumulative count chart.
+    const dataPoints = timestamps.map((timestamp, index) => ({
+        x: timestamp, // a valid Date object
+        y: index + 1
+    }));
+
+
+    // Get the context of the canvas element.
+    const ctx = document.getElementById('timeTrendChart').getContext('2d');
+
+// Create the Chart.js chart.
+timeTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'Cumulative Images Captured',
+            data: dataPoints, // dataPoints: [{x: Date, y: count}, ...]
+            fill: false,
+            borderColor: 'rgba(75,192,192,1)',
+            tension: 0.1,
+        }]
+    },
+    options: {
+        scales: {
+            x: {
+                type: 'time',
+                time: {
+                    unit: 'day',
+                    // Display format for the tick labels.
+                    displayFormats: {
+                        day: 'MMM DD, YYYY'
+                    },
+                    tooltipFormat: 'MMM DD, YYYY'
+                },
+                title: {
+                    display: true,
+                    text: 'Date'
+                },
+                ticks: {
+                    // Disable auto-skip so that ticks always display.
+                    autoSkip: false,
+                    // Adjust rotation if needed
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Cumulative Count'
+                },
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const date = new Date(context.parsed.x);
+                        return `${context.dataset.label}: ${context.parsed.y} (Captured on ${date.toLocaleString()})`;
+                    }
+                }
+            }
+        }
+    }
+});
+}
+
+function zoomToMarkers() {
+    // Get all marker positions as an array of LatLng objects.
+    const markerPositions = Object.values(markers).map(marker => marker.getLatLng());
+
+    // Only proceed if there is at least one marker.
+    if (markerPositions.length > 0) {
+        // Create a LatLngBounds object that contains all marker positions.
+        const bounds = L.latLngBounds(markerPositions);
+        
+        // Optionally, add padding around the bounds.
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+}
+
